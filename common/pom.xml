@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.litgee</groupId>
+        <artifactId>dependency-manager</artifactId>
+        <version>1.3.5.RELEASE</version>
+    </parent>
+
+    <groupId>com.chaoqer</groupId>
+    <artifactId>common</artifactId>
+    <version>0.6.1.RELEASE</version>
+    <packaging>jar</packaging>
+
+    <name>common</name>
+
+    <repositories>
+        <repository>
+            <id>gitlab-maven</id>
+            <url>https://git.loser.pub/api/v4/groups/19/-/packages/maven</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>gitlab-maven</id>
+            <url>https://git.loser.pub/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+        </repository>
+        <snapshotRepository>
+            <id>gitlab-maven</id>
+            <url>https://git.loser.pub/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+</project>

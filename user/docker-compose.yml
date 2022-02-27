@@ -1,0 +1,15 @@
+version: '3.8'
+
+networks:
+  chaoqer:
+    external: true
+
+services:
+  chaoqer-$CI_PROJECT_NAME:
+    image: $CI_REGISTRY_IMAGE:$CI_ENVIRONMENT_NAME-latest
+    networks:
+      - chaoqer
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1

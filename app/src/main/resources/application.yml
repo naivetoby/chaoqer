@@ -1,0 +1,53 @@
+spring:
+  profiles:
+    active: $CI_ENVIRONMENT_NAME
+  main:
+    web-application-type: none
+  rabbitmq:
+    host: chaoqer-rabbitmq
+    port: 5672
+    username: chaoqer
+    password: ~
+    virtual-host: simple-rpc
+  redis:
+    database: 0
+    host: chaoqer-redis
+    port: 6379
+    password: ~
+    lettuce:
+      shutdown-timeout: 100ms
+      pool:
+        max-active: 8
+        max-wait: -1ms
+        max-idle: 8
+        min-idle: 0
+
+simple-rpc:
+  client-slow-call-time: 500
+  server-slow-call-time: 300
+
+aliyun:
+  sls:
+    access-key:
+      id: ~
+      secret: ~
+    endpoint: ~
+    project: ~
+    logStore: ~
+  ots:
+    access-key:
+      id: ~
+      secret: ~
+    data:
+      endpoint: ~
+      endpoint-public: ~
+      instance-name: ~
+    log:
+      endpoint: ~
+      endpoint-public: ~
+      instance-name: ~
+
+app:
+  link-preview:
+    site: https://api.linkpreview.net
+    key: ~

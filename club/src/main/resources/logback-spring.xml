@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--  变量转化 -->
+    <springProperty scope="context" name="aliyun.sls.endpoint" source="aliyun.sls.endpoint"/>
+    <springProperty scope="context" name="aliyun.sls.access-key.id" source="aliyun.sls.access-key.id"/>
+    <springProperty scope="context" name="aliyun.sls.access-key.secret" source="aliyun.sls.access-key.secret"/>
+    <springProperty scope="context" name="aliyun.sls.project" source="aliyun.sls.project"/>
+    <springProperty scope="context" name="aliyun.sls.logStore" source="aliyun.sls.logStore"/>
+    <!-- 阿里云日志 -->
+    <appender name="aliyunAppender" class="com.aliyun.openservices.log.logback.LoghubAppender">
+        <!--必选项, 账号及网络配置 -->
+        <endpoint>${aliyun.sls.endpoint}</endpoint>
+        <accessKeyId>${aliyun.sls.access-key.id}</accessKeyId>
+        <accessKeySecret>${aliyun.sls.access-key.secret}</accessKeySecret>
+        <project>${aliyun.sls.project}</project>
+        <logStore>${aliyun.sls.logStore}</logStore>
+        <topic>${CI_PROJECT_NAME}_${CI_ENVIRONMENT_NAME}</topic>
+        <!--<source>${HOSTNAME}</source>-->
+        <timeFormat>yyyy-MM-dd HH:mm:ss.SSS</timeFormat>
+        <timeZone>Asia/Shanghai</timeZone>
+    </appender>
+    <!-- 标准输出 -->
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{0}: - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    <springProfile name="dev">
+        <root level="ERROR">
+            <appender-ref ref="aliyunAppender"/>
+            <appender-ref ref="consoleAppender"/>
+        </root>
+        <logger name="vip.toby.rpc" level="INFO"/>
+        <logger name="com.chaoqer" level="INFO"/>
+    </springProfile>
+    <springProfile name="local">
+        <root level="WARN">
+            <appender-ref ref="consoleAppender"/>
+        </root>
+        <logger name="vip.toby.rpc" level="DEBUG"/>
+        <logger name="com.chaoqer" level="DEBUG"/>
+    </springProfile>
+    <!--为了防止进程退出时，内存中的数据丢失，请加上此选项-->
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+</configuration>

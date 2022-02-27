@@ -1,0 +1,23 @@
+stages:
+  - deploy
+
+variables:
+  MAVEN_CLI_OPTS: "-s ci_settings.xml --batch-mode"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  key: maven-ci-cache
+  paths:
+    - .m2/repository/
+
+deploy:
+  stage: deploy
+  image: git.loser.pub:5050/backend/docker-image:maven3jdk8-latest
+  script:
+    - mvn $MAVEN_CLI_OPTS deploy -Dmaven.test.skip=true
+  only:
+    - tags
+  except:
+    - branches
+  tags:
+    - java-runner

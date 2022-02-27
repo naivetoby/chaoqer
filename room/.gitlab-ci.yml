@@ -1,0 +1,101 @@
+stages:
+  - release
+  - deploy
+
+variables:
+  MAVEN_CLI_OPTS: "-s ci_settings.xml --batch-mode"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  key: maven-ci-cache
+  paths:
+    - .m2/repository/
+
+release-local:
+  stage: release
+  environment:
+    name: local
+  image: git.loser.pub:5050/backend/docker-image:maven3jdk8-latest
+  script:
+    - envsubst < ./src/main/resources/logback-spring.xml > ./src/main/resources/logback-spring.xml.tmp
+    - mv -f ./src/main/resources/logback-spring.xml.tmp ./src/main/resources/logback-spring.xml
+    - envsubst < ./src/main/resources/application.yml > ./src/main/resources/application.yml.tmp
+    - mv -f ./src/main/resources/application.yml.tmp ./src/main/resources/application.yml
+    - mvn $MAVEN_CLI_OPTS compile -Dmaven.test.skip=true com.google.cloud.tools:jib-maven-plugin:2.7.1:build
+      -Djib.from.image=git.loser.pub:5050/backend/docker-image:openjdk8-latest
+      -Djib.from.auth.username=gitlab-ci-token
+      -Djib.from.auth.password=$CI_JOB_TOKEN
+      -Djib.to.image=$CI_REGISTRY_IMAGE:$CI_ENVIRONMENT_NAME-latest
+      -Djib.to.auth.username=gitlab-ci-token
+      -Djib.to.auth.password=$CI_JOB_TOKEN
+      -Djib.container.creationTime=USE_CURRENT_TIMESTAMP
+  only:
+    - local
+  tags:
+    - java-runner
+
+release-dev:
+  stage: release
+  environment:
+    name: dev
+  image: git.loser.pub:5050/backend/docker-image:maven3jdk8-latest
+  script:
+    - envsubst < ./src/main/resources/logback-spring.xml > ./src/main/resources/logback-spring.xml.tmp
+    - mv -f ./src/main/resources/logback-spring.xml.tmp ./src/main/resources/logback-spring.xml
+    - envsubst < ./src/main/resources/application.yml > ./src/main/resources/application.yml.tmp
+    - mv -f ./src/main/resources/application.yml.tmp ./src/main/resources/application.yml
+    - mvn $MAVEN_CLI_OPTS compile -Dmaven.test.skip=true com.google.cloud.tools:jib-maven-plugin:2.7.1:build
+      -Djib.from.image=git.loser.pub:5050/backend/docker-image:openjdk8-latest
+      -Djib.from.auth.username=gitlab-ci-token
+      -Djib.from.auth.password=$CI_JOB_TOKEN
+      -Djib.to.image=$CI_REGISTRY_IMAGE:$CI_ENVIRONMENT_NAME-latest
+      -Djib.to.auth.username=gitlab-ci-token
+      -Djib.to.auth.password=$CI_JOB_TOKEN
+      -Djib.container.creationTime=USE_CURRENT_TIMESTAMP
+      -Djib.container.environment=RABBITMQ_HOST="$RABBITMQ_HOST"
+  only:
+    - dev
+  tags:
+    - java-runner
+
+deploy-local:
+  stage: deploy
+  environment:
+    name: local
+  image: git.loser.pub:5050/backend/docker-image:ssh-latest
+  before_script:
+    - eval $(ssh-agent -s)
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $CI_ENVIRONMENT_NAME.chaoley.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - envsubst < docker-compose.yml > $CI_PROJECT_NAME.yml
+    - scp $CI_PROJECT_NAME.yml $DEPLOY_SSH_USER@$CI_ENVIRONMENT_NAME.chaoley.com:~
+    - ssh $DEPLOY_SSH_USER@$CI_ENVIRONMENT_NAME.chaoley.com "docker-compose -f $CI_PROJECT_NAME.yml pull && docker-compose -f $CI_PROJECT_NAME.yml up -d && docker image prune -f"
+  only:
+    - local
+  tags:
+    - java-runner
+
+deploy-dev:
+  stage: deploy
+  environment:
+    name: dev
+  image: git.loser.pub:5050/backend/docker-image:ssh-latest
+  before_script:
+    - eval $(ssh-agent -s)
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $CI_ENVIRONMENT_NAME.chaoley.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - envsubst < docker-compose.yml > $CI_PROJECT_NAME.yml
+    - scp $CI_PROJECT_NAME.yml $DEPLOY_SSH_USER@$CI_ENVIRONMENT_NAME.chaoley.com:~
+    - ssh $DEPLOY_SSH_USER@$CI_ENVIRONMENT_NAME.chaoley.com "docker-compose -f $CI_PROJECT_NAME.yml pull && docker-compose -f $CI_PROJECT_NAME.yml up -d && docker image prune -f"
+  only:
+    - dev
+  tags:
+    - java-runner
